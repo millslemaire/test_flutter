@@ -64,13 +64,18 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   Future<List<BookInfo>> _fetchBooks() async {
-    final booksListAPIUrl = 'http://127.0.0.1:5000/api/v1/resources/books/all';
+    //final booksListAPIUrl = 'http://10.0.2.2:5000/books';
+    final booksListAPIUrl = 'http://127.0.0.1:5000/books';
+    print(booksListAPIUrl);
     final response = await http.get(booksListAPIUrl);
+    print(response);
 
     if (response.statusCode == 200) {
+      print('good response');
       List jsonResponse = json.decode(response.body);
       return jsonResponse.map((book) => new BookInfo.fromJson(book)).toList();
     } else {
+      print('bad response');
       throw Exception('Failed to load books from API');
     }
   }

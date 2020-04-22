@@ -12,9 +12,14 @@ db = SQLAlchemy(app)
 # Define all of the models for the database
 class Book(db.Model):
     __tablename__ = 'book'
-    
+
     title = db.Column(db.String(80), nullable = False)
     id = db.Column(db.Integer, primary_key = True)
+
+    @property
+    def serialize(self):
+        return {'title': self.title, 'id': self.id}
+
 
 
 # Create all of the models for the database
