@@ -6,14 +6,44 @@ void main() {
   runApp(App());
 }
 
-class BookInfo {
-  final String title;
+//Model of a Book
+class Book {
   final int id;
+  final String title;
 
-  BookInfo({this.title, this.id});
+  Book({this.id, this.title});
 
-  factory BookInfo.fromJson(Map<String, dynamic> json) {
-    return BookInfo(title: json['title'], id: json['id']);
+  factory Book.fromJson(Map<String, dynamic> json) {
+    return new Book(id: json['id'], title: json['title']);
+  }
+}
+
+//Model of a Book List
+class BooksList {
+  final List<Book> books;
+  BooksList({this.books});
+
+  factory BooksList.fromJson(List<dynamic> parsedJson) {
+    List<Book> books = new List<Book>();
+    books = parsedJson.map((i) => Book.fromJson(i)).toList();
+    return new BooksList(books: books);
+  }
+}
+
+//Function to fetch a Book List
+Future<BooksList> fetchBooksList() async {
+  //final booksListAPIUrl = 'http://10.0.2.2:5000/api/books';
+  final booksListAPIUrl = 'http://127.0.0.1:5000/api/books';
+  print(booksListAPIUrl);
+  final response = await http.get(booksListAPIUrl);
+  print(response);
+
+  if (response.statusCode == 200) {
+    print('good response');
+    return BooksList.fromJson(json.decode(response.body));
+  } else {
+    print('bad response');
+    throw Exception('Failed to load post');
   }
 }
 
@@ -39,80 +69,39 @@ class App extends StatelessWidget {
         // closer together (more dense) than on mobile platforms.
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: MyHomePage(title: 'Book Database Demo'),
+      home: MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class MyHomePage extends StatelessWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  Future<List<BookInfo>> _fetchBooks() async {
-    //final booksListAPIUrl = 'http://10.0.2.2:5000/books';
-    final booksListAPIUrl = 'http://127.0.0.1:5000/books';
-    print(booksListAPIUrl);
-    final response = await http.get(booksListAPIUrl);
-    print(response);
-
-    if (response.statusCode == 200) {
-      print('good response');
-      List jsonResponse = json.decode(response.body);
-      return jsonResponse.map((book) => new BookInfo.fromJson(book)).toList();
-    } else {
-      print('bad response');
-      throw Exception('Failed to load books from API');
-    }
-  }
-
   Widget build(BuildContext context) {
-    return FutureBuilder<List<BookInfo>>(
-      future: _fetchBooks(),
-      builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          List<BookInfo> data = snapshot.data;
-          return _bookListView(data);
-        } else if (snapshot.hasError) {
-          return Text("${snapshot.error}");
-        }
-        return CircularProgressIndicator();
-      },
+    return MaterialApp(
+      title: 'Book Database Demo',
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Fetch Data Example'),
+        ),
+        body: Center(
+          child: FutureBuilder<BooksList>(
+            future: fetchBooksList(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                for (var i = 0; i < snapshot.data.books.length; i++) {
+                  return Text(snapshot.data.books[i].title +
+                      " - " +
+                      snapshot.data.books[i].id.toString());
+                }
+              } else if (snapshot.hasError) {
+                return Text("${snapshot.error}");
+              }
+              // By default, show a loading spinner
+              return CircularProgressIndicator();
+            },
+          ),
+        ),
+      ),
     );
   }
-
-  ListView _bookListView(data) {
-    return ListView.builder(
-        itemCount: data.length,
-        itemBuilder: (context, index) {
-          return _tile(data[index].title, data[index].id, Icons.flag);
-        });
-  }
-
-  ListTile _tile(String title, int id, IconData icon) => ListTile(
-        title: Text(title,
-            style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 20,
-                color: Colors.black)),
-        subtitle: Text('Book id: ' + id.toString()),
-        leading: Icon(
-          icon,
-          color: Colors.blue[500],
-        ),
-      );
 }

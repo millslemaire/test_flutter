@@ -3,7 +3,7 @@ from flask import render_template, jsonify
 from create_db import app, db, Book, create_books
 
 # A route to return all of the available entries in our catalog.
-@app.route('/books', methods=['GET'])
+@app.route('/api/books', methods=['GET'])
 def api_books():
     response = []
     books = db.session.query(Book).all()
